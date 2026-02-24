@@ -1,0 +1,8 @@
+services:
+  django:
+    environment:
+      - TUSK_DRIFT_MODE=${TUSK_DRIFT_MODE:-}
+      - TUSK_MOCK_HOST=${TUSK_MOCK_HOST:-host.docker.internal}
+      - TUSK_MOCK_PORT=${TUSK_MOCK_PORT:-9001}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
