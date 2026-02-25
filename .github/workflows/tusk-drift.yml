@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker images
-        run: docker-compose -f docker-compose.yaml build django
+        run: docker compose -f docker-compose.yaml build django
 
       - name: Run Tusk Drift trace tests
         uses: Use-Tusk/drift-action@v1
