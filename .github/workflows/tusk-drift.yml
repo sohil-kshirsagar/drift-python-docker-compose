@@ -1,0 +1,25 @@
+name: Tusk Drift Trace Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  drift-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: docker-compose -f docker-compose.yaml build django
+
+      - name: Run Tusk Drift trace tests
+        uses: Use-Tusk/drift-action@v1
+        with:
+          cache-key: ${{ runner.os }}-tusk-drift-${{ hashFiles('.tusk/config.yaml') }}
+          api-key: ${{ secrets.TUSK_API_KEY }}

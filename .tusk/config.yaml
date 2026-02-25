@@ -1,0 +1,26 @@
+service:
+  name: drift-python-docker-compose
+  port: 8001
+  start:
+    command: docker-compose -f docker-compose.yaml -f docker-compose.tusk-override.yml up
+  stop:
+    command: docker-compose down
+  communication:
+    type: tcp
+    tcp_port: 9001
+  readiness_check:
+    command: curl -fsS http://localhost:8001/api/health/
+    timeout: 30s
+    interval: 1s
+  id: dde8c7fc-31ad-4734-a31a-37edb1d52383
+
+traces:
+  dir: .tusk/traces
+
+test_execution:
+  timeout: 30s
+
+recording:
+  sampling_rate: 0.1
+  export_spans: true
+  enable_env_var_recording: false

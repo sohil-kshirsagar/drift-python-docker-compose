@@ -17,6 +17,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'drift.instrumentation.django.middleware.DriftMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 

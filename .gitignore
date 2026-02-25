@@ -5,3 +5,8 @@ __pycache__/
 db.sqlite3
 .tusk/traces/
 *.log
+
+# Tusk Drift
+.tusk/results
+.tusk/logs
+.tusk/setup

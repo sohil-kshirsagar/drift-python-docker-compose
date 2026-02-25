@@ -17,6 +17,6 @@ COPY . .
 COPY compose/django/start /start
 RUN chmod +x /start
 
-EXPOSE 8000
+EXPOSE 8001
 
 CMD ["/start"]

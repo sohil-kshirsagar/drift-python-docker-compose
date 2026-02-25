@@ -9,4 +9,4 @@ if [ "$MODE_LOWER" != "replay" ]; then
     python manage.py migrate --noinput
 fi
 
-exec uvicorn app.asgi:application --host 0.0.0.0 --port 8000 --reload
+exec uvicorn app.asgi:application --host 0.0.0.0 --port 8001 --reload

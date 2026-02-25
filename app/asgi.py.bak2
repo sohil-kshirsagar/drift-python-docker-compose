@@ -1,6 +1,6 @@
-import tusk_drift_init  # noqa: F401
-
 import os
+
+# import tusk_drift_init  # noqa: F401
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
 
