@@ -24,6 +24,6 @@ jobs:
           cache-key: ${{ runner.os }}-tusk-drift-${{ hashFiles('.tusk/config.yaml') }}
           api-key: ${{ secrets.TUSK_API_KEY }}
           cli-source: source
-          cli-source-ref: fix/tcp-listen-all-interfaces
+          cli-source-ref: main
         env:
           TUSK_API_URL: https://burro-sweeping-racer.ngrok-free.app
