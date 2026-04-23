@@ -24,4 +24,4 @@ jobs:
           cache-key: ${{ runner.os }}-tusk-drift-${{ hashFiles('.tusk/config.yaml') }}
           cli-source: source
           cli-source-ref: main
-          run-command: tusk drift run -p --concurrency 1 --enable-service-logs --sandbox-mode auto
+          run-command: tusk drift run -p --concurrency 1 --enable-service-logs --sandbox-mode strict
