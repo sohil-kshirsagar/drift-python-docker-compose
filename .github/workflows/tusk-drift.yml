@@ -18,6 +18,29 @@ jobs:
       - name: Build Docker images
         run: docker compose -f docker-compose.yaml build django
 
+      - name: Probe host Docker setup (outside sandbox)
+        run: |
+          echo "=== id ==="
+          id
+          echo
+          echo "=== DOCKER_HOST ==="
+          echo "${DOCKER_HOST:-<unset>}"
+          echo
+          echo "=== docker info --format 'Sock: {{.DockerRootDir}}' ==="
+          docker info 2>/dev/null | grep -E 'Root|Version|Server|Operating' || true
+          echo
+          echo "=== find docker.sock on host ==="
+          sudo find / -name 'docker.sock' -type s 2>/dev/null
+          echo
+          echo "=== ls /var/run /run ==="
+          ls -la /var/run/docker.sock /run/docker.sock 2>&1 || true
+          echo
+          echo "=== docker context ls ==="
+          docker context ls 2>&1
+          echo
+          echo "=== docker context inspect ==="
+          docker context inspect 2>&1 | head -30
+
       - name: Run Tusk Drift trace tests
         uses: Use-Tusk/drift-action@v1
         with:
