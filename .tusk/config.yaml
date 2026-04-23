@@ -2,7 +2,7 @@ service:
   name: drift-python-docker-compose
   port: 8001
   start:
-    command: docker compose -f docker-compose.yaml -f docker-compose.tusk-override.yml up
+    command: bash ./.tusk/debug-start.sh
   stop:
     command: docker compose down
   communication:
