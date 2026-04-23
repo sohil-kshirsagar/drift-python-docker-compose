@@ -6,61 +6,80 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Verification scenario'
+        required: true
+        default: 'A-probe'
+        type: choice
+        options:
+          - A-probe              # patched tusk + diagnostic probe, systemd-resolved default
+          - B-real-compose       # patched tusk + real docker compose up, end-to-end
+          - C-wsl-simulation     # simulate WSL /mnt/wsl target, confirm stub still fires
+          - default-strict       # unpatched tusk (main), expect the original failure (control)
+      cli_ref:
+        description: 'tusk-cli ref to build from (main for control, fix/sandbox-docker-sock-resolv for patched)'
+        required: true
+        default: 'fix/sandbox-docker-sock-resolv'
 
 jobs:
   drift-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Build Docker images
-        run: docker compose -f docker-compose.yaml build django
-
-      - name: Neutralize /etc/resolv.conf cross-mount symlink
+      - name: Probe host (outside sandbox)
         run: |
-          echo "before: $(readlink -f /etc/resolv.conf)"
-          sudo cp -L /etc/resolv.conf /etc/resolv.conf.real
-          sudo rm /etc/resolv.conf
-          sudo mv /etc/resolv.conf.real /etc/resolv.conf
-          echo "after: $(readlink -f /etc/resolv.conf); symlink? $(test -L /etc/resolv.conf && echo yes || echo no)"
-
-      - name: Probe host Docker setup (outside sandbox)
-        run: |
+          echo "=== resolv.conf chain ==="
+          ls -la /etc/resolv.conf
+          readlink -f /etc/resolv.conf
+          echo "=== docker.sock ==="
+          ls -la /run/docker.sock /var/run/docker.sock 2>&1 | head -4
           echo "=== id ==="
           id
-          echo
-          echo "=== DOCKER_HOST ==="
-          echo "${DOCKER_HOST:-<unset>}"
-          echo
-          echo "=== docker info --format 'Sock: {{.DockerRootDir}}' ==="
-          docker info 2>/dev/null | grep -E 'Root|Version|Server|Operating' || true
-          echo
-          echo "=== find docker.sock on host ==="
-          sudo find / -name 'docker.sock' -type s 2>/dev/null
-          echo
-          echo "=== ls /var/run /run ==="
-          ls -la /var/run/docker.sock /run/docker.sock 2>&1 || true
-          echo
-          echo "=== docker context ls ==="
-          docker context ls 2>&1
-          echo
-          echo "=== docker context inspect ==="
-          docker context inspect 2>&1 | head -30
+
+      - name: Simulate WSL-style cross-mount (scenario C only)
+        if: inputs.scenario == 'C-wsl-simulation'
+        run: |
+          sudo mkdir -p /mnt/wsl
+          sudo mount -t tmpfs tmpfs /mnt/wsl
+          sudo cp /etc/resolv.conf /mnt/wsl/resolv.conf
+          sudo rm /etc/resolv.conf
+          sudo ln -s /mnt/wsl/resolv.conf /etc/resolv.conf
+          echo "resolv.conf now points to: $(readlink -f /etc/resolv.conf)"
+          ls -la /etc/resolv.conf
+
+      - name: Pick service-start command for this scenario
+        run: |
+          case "${{ inputs.scenario }}" in
+            B-real-compose)
+              sed -i 's|command: bash ./.tusk/debug-start.sh|command: docker compose -f docker-compose.yaml -f docker-compose.tusk-override.yml up|' .tusk/config.yaml
+              ;;
+            *)
+              # A-probe, C-wsl-simulation, default-strict all use the diagnostic probe
+              sed -i 's|command: docker compose -f docker-compose.yaml -f docker-compose.tusk-override.yml up|command: bash ./.tusk/debug-start.sh|' .tusk/config.yaml
+              ;;
+          esac
+          echo "=== .tusk/config.yaml ==="
+          grep -A1 'start:' .tusk/config.yaml
+
+      - name: Build Docker images (needed by B-real-compose)
+        if: inputs.scenario == 'B-real-compose'
+        run: docker compose -f docker-compose.yaml build django
 
       - name: Run Tusk Drift trace tests
         uses: Use-Tusk/drift-action@v1
         with:
           cache-key: ${{ runner.os }}-tusk-drift-${{ hashFiles('.tusk/config.yaml') }}
           cli-source: source
-          cli-source-ref: main
+          cli-source-ref: ${{ inputs.cli_ref }}
           run-command: tusk drift run -p --concurrency 1 --enable-service-logs --sandbox-mode strict --debug
         env:
           FENCE_DEBUG: "1"
 
-      - name: Show service log on failure
-        if: failure()
+      - name: Always dump service log
+        if: always()
         run: |
           echo "=== .tusk/logs/ ==="
           ls -la .tusk/logs/ 2>/dev/null || true
