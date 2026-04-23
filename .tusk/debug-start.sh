@@ -1,24 +1,23 @@
 #!/usr/bin/env bash
-# Diagnostic service-start. Dumps what's visible/blocked under the sandbox,
-# then exits non-zero so the drift run reports (and we can read the output
-# via the startup log buffer).
+# Diagnostic service-start inside the sandbox.
 set +e
-echo "=== whoami / id ==="
-whoami
+echo "=== id ==="
 id
 
 echo
-echo "=== env | relevant ==="
-env | grep -E '^(DOCKER|PATH|HOME|USER|UID|XDG|TMPDIR)=' | sort
+echo "=== /proc/self/mountinfo (full) ==="
+cat /proc/self/mountinfo
 
 echo
-echo "=== mount | head ==="
-mount | head -20
+echo "=== readlink /var/run ==="
+readlink /var/run
+readlink -f /var/run
 
 echo
-echo "=== ls -la /var/run /run ==="
-ls -la /var/run 2>&1 | head
-ls -la /run 2>&1 | head
+echo "=== ls -la /var /run ==="
+ls -la /var 2>&1 | head -10
+echo
+ls -la /run 2>&1 | head -20
 
 echo
 echo "=== /var/run/docker.sock stat ==="
