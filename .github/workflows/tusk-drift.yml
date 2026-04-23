@@ -18,6 +18,14 @@ jobs:
       - name: Build Docker images
         run: docker compose -f docker-compose.yaml build django
 
+      - name: Neutralize /etc/resolv.conf cross-mount symlink
+        run: |
+          echo "before: $(readlink -f /etc/resolv.conf)"
+          sudo cp -L /etc/resolv.conf /etc/resolv.conf.real
+          sudo rm /etc/resolv.conf
+          sudo mv /etc/resolv.conf.real /etc/resolv.conf
+          echo "after: $(readlink -f /etc/resolv.conf); symlink? $(test -L /etc/resolv.conf && echo yes || echo no)"
+
       - name: Probe host Docker setup (outside sandbox)
         run: |
           echo "=== id ==="
